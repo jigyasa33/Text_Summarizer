@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Text Summarize</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
+
+body{
+background:linear-gradient(135deg,#050b2f,#0b1d51,#163c8c);
+min-height:100vh;
+padding:30px;
+color:#fff;
+}
+
+.container{
+max-width:1150px;
+margin:auto;
+}
+
+.head{
+text-align:center;
+margin-bottom:30px;
+}
+
+.title-row{
+display:flex;
+justify-content:center;
+align-items:flex-end;
+gap:12px;
+flex-wrap:wrap;
+}
+
+.head h1{
+font-size:72px;
+font-weight:900;
+line-height:1;
+letter-spacing:-2px;
+background:linear-gradient(90deg,#ffffff,#ffd9c7,#ff9a6c);
+background-clip:text;
+-webkit-background-clip:text;
+color:transparent;
+-webkit-text-fill-color:transparent;
+}
+
+.subhead{
+font-size:24px;
+color:#e7e7e7;
+font-weight:500;
+margin-bottom:10px;
+}
+
+.head p{
+color:#d8d8d8;
+margin-top:8px;
+font-size:18px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:1.2fr 1fr;
+gap:20px;
+}
+
+.card{
+background:#f8f8f0;
+color:#111;
+border-radius:18px;
+padding:20px;
+box-shadow:0 10px 25px rgba(0,0,0,.25);
+}
+
+textarea{
+width:100%;
+height:320px;
+padding:12px;
+border:1px solid #ccc;
+border-radius:12px;
+resize:none;
+margin:12px 0;
+font-size:15px;
+}
+
+.actions{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+
+button{
+padding:12px 18px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.mainbtn{
+background:#0b1d51;
+color:#fff;
+}
+
+.secbtn{
+background:#e8e8e8;
+}
+
+#summary{
+min-height:250px;
+margin-top:10px;
+white-space:pre-wrap;
+line-height:1.6;
+}
+
+.stats{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:10px;
+margin-top:15px;
+}
+
+.box{
+background:#eef3ff;
+padding:12px;
+border-radius:10px;
+text-align:center;
+font-weight:bold;
+}
+
+.info{
+margin-top:20px;
+display:grid;
+gap:12px;
+}
+
+.small{
+background:#f8f8f0;
+color:#111;
+padding:15px;
+border-radius:14px;
+line-height:1.5;
+}
+
+@media(max-width:850px){
+.grid{grid-template-columns:1fr}
+.head h1{font-size:48px}
+.subhead{font-size:18px}
+.head p{font-size:15px}
+.stats{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="head">
+<div class="title-row">
+<h1>Text Summarize</h1>
+<span class="subhead">using HuggingFace Transformer</span>
+</div>
+<p>Drop any text — get a crisp, intelligent summary instantly.</p>
+</div>
+
+<div class="grid">
+
+<!-- Left -->
+<div class="card">
+<h3>Input Text</h3>
+
+<textarea id="text" placeholder="Paste article, notes or speak using mic..."></textarea>
+
+<div class="actions">
+<button class="secbtn" onclick="startVoice()">🎤 Voice Input</button>
+<button class="secbtn" onclick="clearText()">Clear</button>
+<button class="mainbtn" onclick="summarize()">Summarize →</button>
+</div>
+</div>
+
+<!-- Right -->
+<div>
+
+<div class="card">
+<h3>Summary</h3>
+<div id="summary">Your summary will appear here...</div>
+
+<div class="stats">
+<div class="box" id="w1">0 Words</div>
+<div class="box" id="w2">0 Summary</div>
+<div class="box" id="w3">0%</div>
+</div>
+</div>
+
+<div class="info">
+<div class="small">
+<b>Articles & Reports</b><br>
+Quickly summarize long paragraphs, essays, notes, blogs, and reports.
+</div>
+
+<div class="small">
+<b>Conversations</b><br>
+Generate short and meaningful summaries from meetings, chats, and dialogues.
+</div>
+
+<div class="small">
+<b>Voice to Summary</b><br>
+Press the mic, speak your text, auto-fill input, and generate summary instantly.
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<script>
+function countWords(t){
+return t.trim().split(/\s+/).filter(x=>x).length;
+}
+
+async function summarize(){
+let t=document.getElementById("text").value.trim();
+
+if(!t){
+alert("Enter text");
+return;
+}
+
+document.getElementById("summary").innerText="Loading...";
+
+try{
+let r=await fetch("/summarize/",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({dialogue:t})
+});
+
+let d=await r.json();
+let s=d.summary || "No summary";
+
+document.getElementById("summary").innerText=s;
+
+document.getElementById("w1").innerText=countWords(t)+" Words";
+document.getElementById("w2").innerText=countWords(s)+" Summary";
+document.getElementById("w3").innerText=
+Math.round((1-countWords(s)/countWords(t))*100)+"%";
+
+}catch{
+document.getElementById("summary").innerText="Server Error";
+}
+}
+
+function clearText(){
+document.getElementById("text").value="";
+document.getElementById("summary").innerText="Your summary will appear here...";
+document.getElementById("w1").innerText="0 Words";
+document.getElementById("w2").innerText="0 Summary";
+document.getElementById("w3").innerText="0%";
+}
+
+function startVoice(){
+let SpeechRecognition=
+window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if(!SpeechRecognition){
+alert("Voice not supported");
+return;
+}
+
+let rec=new SpeechRecognition();
+rec.lang="en-US";
+rec.start();
+
+rec.onresult=function(e){
+document.getElementById("text").value=
+e.results[0][0].transcript;
+};
+}
+</script>
+
+</body>
+</html>
